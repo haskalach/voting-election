@@ -85,6 +85,7 @@ public class OrganizationService : IOrganizationService
         // Create Employee record for the admin
         var adminEmployee = new Employee
         {
+            UserId = adminUser.UserId,
             OrganizationId = org.OrganizationId,
             SupervisedByUserId = createdByUserId,
             FirstName = adminUser.FirstName,
