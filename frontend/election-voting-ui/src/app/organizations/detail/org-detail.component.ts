@@ -1,6 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, ActivatedRoute } from '@angular/router';
+import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { OrganizationService } from '../../core/services/organization.service';
 import { EmployeeService } from '../../core/services/employee.service';
 import { Organization, EmployeeSummary } from '../../core/models/models';
@@ -14,11 +14,20 @@ import { AuthService } from '../../core/services/auth.service';
     <div class="page-header">
       <a routerLink="/organizations" class="back-link">← Organizations</a>
       @if (auth.isSystemOwner() && org()) {
-        <a
-          [routerLink]="['/organizations', org()!.organizationId, 'edit']"
-          class="btn-secondary"
-          >Edit</a
-        >
+        <div>
+          <a
+            [routerLink]="['/organizations', org()!.organizationId, 'edit']"
+            class="btn-secondary"
+            >Edit</a
+          >
+          <button
+            (click)="deleteOrg()"
+            class="btn-delete"
+            [disabled]="loading()"
+          >
+            Delete
+          </button>
+        </div>
       }
     </div>
 
@@ -93,6 +102,19 @@ import { AuthService } from '../../core/services/auth.service';
                         class="btn-link"
                         >Edit</a
                       >
+                      @if (auth.isSystemOwner()) {
+                        <button
+                          (click)="
+                            deleteEmployee(
+                              emp.employeeId,
+                              emp.firstName + ' ' + emp.lastName
+                            )
+                          "
+                          class="btn-delete-link"
+                        >
+                          Delete
+                        </button>
+                      }
                     </td>
                   </tr>
                 }
@@ -115,6 +137,37 @@ import { AuthService } from '../../core/services/auth.service';
         color: #0f3460;
         text-decoration: none;
         font-size: 0.9rem;
+      }
+      .btn-delete {
+        background: #d32f2f;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        border: none;
+        text-decoration: none;
+        font-size: 0.85rem;
+        cursor: pointer;
+        margin-left: 0.5rem;
+      }
+      .btn-delete:hover {
+        background: #b71c1c;
+      }
+      .btn-delete:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+      .btn-delete-link {
+        background: none;
+        border: none;
+        color: #d32f2f;
+        text-decoration: none;
+        font-size: 0.85rem;
+        cursor: pointer;
+        padding: 0;
+        font: inherit;
+      }
+      .btn-delete-link:hover {
+        text-decoration: underline;
       }
       .detail-grid {
         display: grid;
@@ -226,11 +279,13 @@ import { AuthService } from '../../core/services/auth.service';
 export class OrgDetailComponent implements OnInit {
   org = signal<Organization | null>(null);
   employees = signal<EmployeeSummary[]>([]);
+  loading = signal(false);
 
   constructor(
     private orgService: OrganizationService,
     private empService: EmployeeService,
     private route: ActivatedRoute,
+    private router: Router,
     public auth: AuthService,
   ) {}
 
@@ -242,5 +297,40 @@ export class OrgDetailComponent implements OnInit {
         .getByOrganization(id)
         .subscribe((emps) => this.employees.set(emps));
     });
+  }
+
+  load(): void {
+    const id = this.org()!.organizationId;
+    this.empService.getByOrganization(id).subscribe((emps) => {
+      this.employees.set(emps);
+    });
+  }
+
+  deleteOrg(): void {
+    if (
+      confirm(
+        `Are you sure you want to delete "${this.org()!.organizationName}"? This will also delete all its employees.`,
+      )
+    ) {
+      this.loading.set(true);
+      this.orgService.delete(this.org()!.organizationId).subscribe({
+        next: () => {
+          this.router.navigate(['/organizations']);
+        },
+        error: () => {
+          this.loading.set(false);
+          alert('Delete failed');
+        },
+      });
+    }
+  }
+
+  deleteEmployee(id: number, name: string): void {
+    if (confirm(`Are you sure you want to delete "${name}"?`)) {
+      this.empService.delete(this.org()!.organizationId, id).subscribe({
+        next: () => this.load(),
+        error: () => alert('Delete failed'),
+      });
+    }
   }
 }

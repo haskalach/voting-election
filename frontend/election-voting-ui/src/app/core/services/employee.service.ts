@@ -37,6 +37,10 @@ export class EmployeeService {
     return this.http.put<Employee>(`${this.baseUrl(orgId)}/${empId}`, dto);
   }
 
+  delete(orgId: number, empId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl(orgId)}/${empId}`);
+  }
+
   deactivate(orgId: number, empId: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl(orgId)}/${empId}`);
   }
