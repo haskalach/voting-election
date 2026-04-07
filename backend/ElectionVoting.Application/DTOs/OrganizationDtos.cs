@@ -4,7 +4,9 @@ public record CreateOrganizationDto(
     string OrganizationName,
     string PartyName,
     string ContactEmail,
-    string Address);
+    string Address,
+    string AdminEmail,
+    string AdminPassword);
 
 public record UpdateOrganizationDto(
     string OrganizationName,

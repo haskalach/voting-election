@@ -2,16 +2,24 @@ using ElectionVoting.Application.DTOs;
 using ElectionVoting.Application.Interfaces;
 using ElectionVoting.Domain.Entities;
 using ElectionVoting.Domain.Interfaces;
+using BCrypt.Net;
 
 namespace ElectionVoting.Application.Services;
 
 public class OrganizationService : IOrganizationService
 {
     private readonly IOrganizationRepository _orgRepository;
+    private readonly IUserRepository _userRepository;
+    private readonly IRoleRepository _roleRepository;
 
-    public OrganizationService(IOrganizationRepository orgRepository)
+    public OrganizationService(
+        IOrganizationRepository orgRepository,
+        IUserRepository userRepository,
+        IRoleRepository roleRepository)
     {
         _orgRepository = orgRepository;
+        _userRepository = userRepository;
+        _roleRepository = roleRepository;
     }
 
     public async Task<IEnumerable<OrganizationSummaryDto>> GetAllAsync()
@@ -37,17 +45,40 @@ public class OrganizationService : IOrganizationService
         if (await _orgRepository.NameExistsAsync(dto.OrganizationName))
             throw new InvalidOperationException("Organization name already exists.");
 
+        if (await _userRepository.EmailExistsAsync(dto.AdminEmail))
+            throw new InvalidOperationException("Admin email already in use.");
+
+        // Get Manager role
+        var managerRole = await _roleRepository.GetByNameAsync(Role.Names.Manager)
+            ?? throw new InvalidOperationException("Manager role not found.");
+
+        // Create organization admin (Manager user)
+        var adminUser = new User
+        {
+            Email = dto.AdminEmail.ToLowerInvariant(),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.AdminPassword),
+            FirstName = "Organization",
+            LastName = "Admin",
+            RoleId = managerRole.RoleId,
+            IsActive = true
+        };
+
+        await _userRepository.AddAsync(adminUser);
+        await _userRepository.SaveChangesAsync();
+
+        // Create organization with the admin as creator
         var org = new Organization
         {
             OrganizationName = dto.OrganizationName,
             PartyName = dto.PartyName,
             ContactEmail = dto.ContactEmail,
             Address = dto.Address,
-            CreatedByUserId = createdByUserId
+            CreatedByUserId = adminUser.UserId
         };
 
         await _orgRepository.AddAsync(org);
         await _orgRepository.SaveChangesAsync();
+
         return MapToDto(org);
     }
 

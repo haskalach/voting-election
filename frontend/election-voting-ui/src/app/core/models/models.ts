@@ -47,6 +47,8 @@ export interface CreateOrganization {
   partyName: string;
   contactEmail: string;
   address: string;
+  adminEmail: string;
+  adminPassword: string;
 }
 
 export interface Employee {

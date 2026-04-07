@@ -18,6 +18,7 @@ public static class ServiceConfiguration
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
         // Repositories
+        services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();

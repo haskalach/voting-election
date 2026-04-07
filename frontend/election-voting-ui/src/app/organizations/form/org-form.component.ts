@@ -64,6 +64,45 @@ import { OrganizationService } from '../../core/services/organization.service';
           </div>
         </div>
 
+        @if (!isEdit()) {
+          <div
+            class="form-row"
+            style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e0e0e0;"
+          >
+            <h3
+              style="grid-column: 1/-1; margin: 0 0 1rem 0; font-size: 1.1rem; color: #333;"
+            >
+              Organization Admin Credentials
+            </h3>
+            <div class="form-group">
+              <label>Admin Email *</label>
+              <input
+                type="email"
+                formControlName="adminEmail"
+                placeholder="admin@party.lb"
+                [class.error]="isInvalid('adminEmail')"
+              />
+              @if (isInvalid('adminEmail')) {
+                <span class="error-msg">Valid admin email is required</span>
+              }
+            </div>
+            <div class="form-group">
+              <label>Admin Password (min. 8 chars) *</label>
+              <input
+                type="password"
+                formControlName="adminPassword"
+                placeholder="Secure password"
+                [class.error]="isInvalid('adminPassword')"
+              />
+              @if (isInvalid('adminPassword')) {
+                <span class="error-msg"
+                  >Password must be at least 8 characters</span
+                >
+              }
+            </div>
+          </div>
+        }
+
         @if (errorMessage()) {
           <div class="alert-error">{{ errorMessage() }}</div>
         }
@@ -196,6 +235,8 @@ export class OrgFormComponent implements OnInit {
       partyName: ['', Validators.required],
       contactEmail: ['', [Validators.required, Validators.email]],
       address: [''],
+      adminEmail: ['', [Validators.required, Validators.email]],
+      adminPassword: ['', [Validators.required, Validators.minLength(8)]],
     });
   }
 
