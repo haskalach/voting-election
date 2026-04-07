@@ -59,12 +59,32 @@ import { EmployeeService } from '../../core/services/employee.service';
             />
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Date of Birth</label>
-            <input type="date" formControlName="dateOfBirth" />
+        @if (!isEdit()) {
+          <div class="form-row">
+            <div class="form-group">
+              <label>Password *</label>
+              <input
+                type="password"
+                formControlName="password"
+                placeholder="Min. 8 characters"
+                [class.error]="isInvalid('password')"
+              />
+              @if (isInvalid('password')) {
+                <span class="error-msg">Min. 8 characters required</span>
+              }
+            </div>
+            <div class="form-group">
+              <label>Date of Birth</label>
+              <input type="date" formControlName="dateOfBirth" />
+            </div>
           </div>
-          @if (isEdit()) {
+        }
+        @if (isEdit()) {
+          <div class="form-row">
+            <div class="form-group">
+              <label>Date of Birth</label>
+              <input type="date" formControlName="dateOfBirth" />
+            </div>
             <div class="form-group">
               <label>Status</label>
               <select formControlName="isActive">
@@ -72,8 +92,8 @@ import { EmployeeService } from '../../core/services/employee.service';
                 <option [value]="false">Inactive</option>
               </select>
             </div>
-          }
-        </div>
+          </div>
+        }
         @if (errorMessage()) {
           <div class="alert-error">{{ errorMessage() }}</div>
         }
@@ -200,6 +220,7 @@ export class EmployeeFormComponent implements OnInit {
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
       phoneNumber: [''],
       dateOfBirth: [null as string | null],
       isActive: [true],
@@ -212,6 +233,9 @@ export class EmployeeFormComponent implements OnInit {
     if (empId) {
       this.isEdit.set(true);
       this.empId = +empId;
+      // Password not required on edit
+      this.form.get('password')!.clearValidators();
+      this.form.get('password')!.updateValueAndValidity();
       this.empService
         .getById(this.orgId, this.empId)
         .subscribe((emp) => this.form.patchValue(emp as any));

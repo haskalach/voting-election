@@ -1,3 +1,4 @@
+using BCrypt.Net;
 using ElectionVoting.Application.DTOs;
 using ElectionVoting.Application.Interfaces;
 using ElectionVoting.Domain.Entities;
@@ -8,10 +9,17 @@ namespace ElectionVoting.Application.Services;
 public class EmployeeService : IEmployeeService
 {
     private readonly IEmployeeRepository _employeeRepository;
+    private readonly IUserRepository _userRepository;
+    private readonly IRoleRepository _roleRepository;
 
-    public EmployeeService(IEmployeeRepository employeeRepository)
+    public EmployeeService(
+        IEmployeeRepository employeeRepository,
+        IUserRepository userRepository,
+        IRoleRepository roleRepository)
     {
         _employeeRepository = employeeRepository;
+        _userRepository = userRepository;
+        _roleRepository = roleRepository;
     }
 
     public async Task<IEnumerable<EmployeeSummaryDto>> GetByOrganizationAsync(int organizationId)
@@ -32,6 +40,28 @@ public class EmployeeService : IEmployeeService
     {
         if (await _employeeRepository.EmailExistsInOrgAsync(dto.Email, organizationId))
             throw new InvalidOperationException("Employee with this email already exists in the organization.");
+
+        if (await _userRepository.GetByEmailAsync(dto.Email.ToLowerInvariant()) != null)
+            throw new InvalidOperationException("A user account with this email already exists.");
+
+        if (string.IsNullOrWhiteSpace(dto.Password) || dto.Password.Length < 8)
+            throw new InvalidOperationException("Password must be at least 8 characters.");
+
+        // Create the login account for the employee
+        var employeeRole = await _roleRepository.GetByNameAsync(Role.Names.Employee)
+            ?? throw new InvalidOperationException("Employee role not found.");
+
+        var user = new User
+        {
+            Email = dto.Email.ToLowerInvariant(),
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+            RoleId = employeeRole.RoleId
+        };
+
+        await _userRepository.AddAsync(user);
+        await _userRepository.SaveChangesAsync();
 
         var employee = new Employee
         {

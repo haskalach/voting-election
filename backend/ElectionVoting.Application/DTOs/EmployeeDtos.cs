@@ -4,6 +4,7 @@ public record CreateEmployeeDto(
     string FirstName,
     string LastName,
     string Email,
+    string Password,
     string PhoneNumber,
     DateTime? DateOfBirth);
 
