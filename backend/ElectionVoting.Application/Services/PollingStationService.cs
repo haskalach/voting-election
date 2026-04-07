@@ -42,6 +42,18 @@ public class PollingStationService : IPollingStationService
         return MapToDto(station);
     }
 
+    public async Task<PollingStationDto> UpdateAsync(int id, UpdatePollingStationDto dto)
+    {
+        var station = await _stationRepo.GetByIdAsync(id)
+            ?? throw new KeyNotFoundException($"Polling station {id} not found.");
+        station.StationName = dto.StationName;
+        station.Location = dto.Location;
+        station.Address = dto.Address;
+        station.Capacity = dto.Capacity;
+        await _stationRepo.SaveChangesAsync();
+        return MapToDto(station);
+    }
+
     public async Task DeleteAsync(int id)
     {
         var station = await _stationRepo.GetByIdAsync(id)

@@ -7,5 +7,6 @@ public interface IPollingStationService
     Task<IEnumerable<PollingStationDto>> GetByOrganizationAsync(int organizationId);
     Task<PollingStationDto> GetByIdAsync(int id);
     Task<PollingStationDto> CreateAsync(int organizationId, CreatePollingStationDto dto);
+    Task<PollingStationDto> UpdateAsync(int id, UpdatePollingStationDto dto);
     Task DeleteAsync(int id);
 }

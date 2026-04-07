@@ -26,6 +26,12 @@ public record CreatePollingStationDto(
     string Address,
     int Capacity);
 
+public record UpdatePollingStationDto(
+    string StationName,
+    string Location,
+    string Address,
+    int Capacity);
+
 public record PollingStationDto(
     int PollingStationId,
     int OrganizationId,

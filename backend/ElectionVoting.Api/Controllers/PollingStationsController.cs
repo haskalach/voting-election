@@ -46,6 +46,20 @@ public class PollingStationsController : ControllerBase
         }
     }
 
+    [HttpPut("{id}")]
+    [Authorize(Roles = "SystemOwner,Manager")]
+    public async Task<ActionResult<PollingStationDto>> Update(int orgId, int id, [FromBody] UpdatePollingStationDto dto)
+    {
+        try
+        {
+            return Ok(await _stationService.UpdateAsync(id, dto));
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
     [HttpDelete("{id}")]
     [Authorize(Roles = "SystemOwner,Manager")]
     public async Task<IActionResult> Delete(int orgId, int id)
