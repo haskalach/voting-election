@@ -54,4 +54,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
+// Seed initial data
+await ElectionVoting.Infrastructure.Data.DatabaseSeeder.SeedAsync(app.Services);
+
 app.Run();
