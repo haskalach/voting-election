@@ -18,6 +18,7 @@
 8. [Data Flow & Interactions](#data-flow--interactions)
 9. [Security Architecture](#security-architecture)
 10. [Performance Considerations](#performance-considerations)
+11. [Architecture Decision Records (ADRs)](#architecture-decision-records-adrs)
 
 ---
 
@@ -1393,6 +1394,298 @@ GROUP BY PollingStationId;
 
 ---
 
+## Architecture Decision Records (ADRs)
+
+Each ADR follows the format: **Context → Decision → Alternatives Considered → Rationale → Trade-offs**.
+
+---
+
+### ADR-001 — 4-Tier Layered Architecture
+
+**Status**: Accepted
+
+**Context**  
+The system needs to support multiple user roles with different access levels, complex business rules (data isolation, audit logging), and a clear separation between API concerns and business logic.
+
+**Decision**  
+Adopt a 4-tier layered architecture: Client → API Controllers → Application Services → Data/Infrastructure.
+
+**Alternatives Considered**
+
+| Alternative           | Reason Rejected                                                 |
+| --------------------- | --------------------------------------------------------------- |
+| 2-Tier (Client + DB)  | No room for business logic, unscalable                          |
+| Microservices         | Over-engineering for a single-team system of this scope         |
+| Vertical Slice / CQRS | Steeper learning curve, adds complexity without clear gain here |
+
+**Rationale**
+
+- Clear responsibility boundaries prevent mixing of concerns
+- Each layer is independently testable (unit tests per layer)
+- Familiar to .NET developers — reduces onboarding friction
+- Easy to swap implementations (e.g., replace SQL Server with PostgreSQL without touching services)
+
+**Trade-offs**
+
+- Slightly more boilerplate code (interfaces, service wrappers)
+- Risk of "anemic domain model" if business logic leaks into controllers
+
+---
+
+### ADR-002 — JWT with Refresh Tokens for Authentication
+
+**Status**: Accepted
+
+**Context**  
+The system requires stateless authentication that works across mobile browsers and desktop, with the ability to revoke sessions when an employee is deactivated.
+
+**Decision**  
+Use short-lived JWT access tokens (15 minutes) paired with long-lived refresh tokens (7 days) stored server-side.
+
+**Alternatives Considered**
+
+| Alternative                               | Reason Rejected                                                 |
+| ----------------------------------------- | --------------------------------------------------------------- |
+| Server-side sessions (cookies)            | Stateful — requires session store, harder to scale horizontally |
+| OAuth 2.0 / OpenID Connect (external IdP) | Unnecessary third-party dependency for a closed system          |
+| API Keys only                             | No expiration semantics, hard to revoke per-device              |
+
+**Rationale**
+
+- Stateless access tokens allow horizontal API scaling without sticky sessions
+- Short expiration (15 min) limits blast radius if a token is stolen
+- Refresh token stored in DB enables immediate revocation on employee deactivation
+- Standard `Authorization: Bearer` header works natively with Angular `HttpInterceptor`
+
+**Trade-offs**
+
+- Refresh token rotation logic adds implementation complexity
+- Access tokens cannot be revoked mid-lifetime (mitigated by 15-min TTL)
+- `localStorage` token storage is vulnerable to XSS (mitigated by Content Security Policy)
+
+---
+
+### ADR-003 — RESTful API over GraphQL or gRPC
+
+**Status**: Accepted
+
+**Context**  
+The Angular frontend needs to consume backend data across ~20 endpoints covering CRUD operations, dashboards, and exports.
+
+**Decision**  
+Implement a RESTful JSON API with standard HTTP verbs and status codes.
+
+**Alternatives Considered**
+
+| Alternative | Reason Rejected                                                     |
+| ----------- | ------------------------------------------------------------------- |
+| GraphQL     | Adds schema complexity; overfetching is not a problem at this scale |
+| gRPC        | Browser support requires grpc-web proxy; not worth the overhead     |
+| OData       | Heavy specification; limited Angular ecosystem support              |
+
+**Rationale**
+
+- REST is universally understood — no special tooling needed
+- Angular's `HttpClient` works naturally with REST + JSON
+- Easy to document with Swagger/OpenAPI (built into ASP.NET Core)
+- Cacheable GET responses are well-supported by HTTP infrastructure
+
+**Trade-offs**
+
+- Multiple round-trips for composite dashboard views (mitigated by dedicated aggregate endpoints)
+- No subscription/push semantics — WebSockets added separately for real-time dashboard
+
+---
+
+### ADR-004 — SQL Server as the Primary Database
+
+**Status**: Accepted
+
+**Context**  
+The system manages relational data (users → organizations → employees → submissions) with strict integrity requirements and audit logging.
+
+**Decision**  
+Use Microsoft SQL Server with Entity Framework Core as the ORM.
+
+**Alternatives Considered**
+
+| Alternative     | Reason Rejected                                                                        |
+| --------------- | -------------------------------------------------------------------------------------- |
+| PostgreSQL      | Equally capable, but SQL Server aligns better with .NET ecosystem and Azure deployment |
+| MongoDB (NoSQL) | Relational data model with foreign keys is a poor fit for document storage             |
+| SQLite          | Not suitable for multi-user concurrent production workloads                            |
+
+**Rationale**
+
+- First-class EF Core support with mature SQL Server provider
+- Strong ACID guarantees critical for election data integrity
+- Native JSON support available if needed for flexible fields
+- Azure SQL (managed) reduces operational overhead in production
+
+**Trade-offs**
+
+- Licensing cost vs PostgreSQL (free); mitigated by Azure SQL pricing tiers
+- Harder to run locally without Docker or SQL Server Express
+
+---
+
+### ADR-005 — Role-Based Access Control (RBAC) over Attribute-Based (ABAC)
+
+**Status**: Accepted
+
+**Context**  
+Three distinct user types (System Owner, Manager, Employee) have clearly defined, non-overlapping permission sets tied to their role in the organizational hierarchy.
+
+**Decision**  
+Implement 3-tier RBAC using ASP.NET Core `[Authorize(Roles = "...")]` combined with a custom organization-scope middleware.
+
+**Alternatives Considered**
+
+| Alternative                           | Reason Rejected                                                             |
+| ------------------------------------- | --------------------------------------------------------------------------- |
+| Attribute-Based Access Control (ABAC) | Over-engineered for 3 fixed roles; policy evaluation overhead not justified |
+| Permission-per-feature flags          | Adds DB complexity; role boundaries are static and well-defined             |
+| Claims-based only (no roles)          | More flexible but requires defining every permission individually           |
+
+**Rationale**
+
+- The 3-role hierarchy directly maps to organizational structure
+- ASP.NET Core has built-in RBAC support — minimal custom code needed
+- Organization-scoping (Manager can only see their own org) implemented as a secondary filter, not a new authorization paradigm
+- Easy to reason about and audit
+
+**Trade-offs**
+
+- Cannot express fine-grained permissions within a role (e.g., a Manager who can export but not delete)
+- Future feature additions may require adding new roles or upgrading to policy-based auth
+
+---
+
+### ADR-006 — Angular for the Frontend
+
+**Status**: Accepted (pre-decided, non-negotiable)
+
+**Context**  
+The client required Angular as the frontend framework for this project.
+
+**Decision**  
+Use Angular (latest LTS) with TypeScript, Angular Router, Reactive Forms, and NgRx for state management on complex views.
+
+**Alternatives Considered**
+
+| Alternative | Notes                               |
+| ----------- | ----------------------------------- |
+| React       | Not selected per client requirement |
+| Vue.js      | Not selected per client requirement |
+
+**Rationale**
+
+- Angular's opinionated structure (modules, services, guards) aligns well with RBAC — route guards map directly to role checks
+- Built-in `HttpInterceptor` simplifies JWT attachment and refresh logic
+- Strong TypeScript integration reduces runtime errors for complex form models
+- Angular's dependency injection mirrors the backend's service layer pattern
+
+**Trade-offs**
+
+- Steeper learning curve than React/Vue for new developers
+- Larger bundle size (mitigated by lazy-loaded feature modules)
+
+---
+
+### ADR-007 — EF Core Code-First over Database-First
+
+**Status**: Accepted
+
+**Context**  
+The database schema needs to be version-controlled, reproducible across environments, and evolve alongside the codebase.
+
+**Decision**  
+Use Entity Framework Core Code-First with migration scripts.
+
+**Alternatives Considered**
+
+| Alternative                           | Reason Rejected                                                     |
+| ------------------------------------- | ------------------------------------------------------------------- |
+| Database-First (scaffold from DB)     | Schema lives outside source control; harder to track changes in PRs |
+| Raw SQL migrations (Flyway/Liquibase) | Adds a separate tool dependency; EF Core migrations are sufficient  |
+| Dapper + manual schema                | Loses EF Core change tracking and relationship management benefits  |
+
+**Rationale**
+
+- C# entity models are the single source of truth — schema and code stay in sync
+- `dotnet ef migrations` integrates with CI/CD pipelines
+- EF Core navigation properties simplify relationship queries (no raw JOIN boilerplate)
+- Seeding initial data (System Owner account, roles) is handled in the same migration pipeline
+
+**Trade-offs**
+
+- EF Core generates sub-optimal SQL for complex aggregations (mitigated by raw SQL fallback via `FromSqlRaw`)
+- Migrations can accumulate; periodic squashing required on long-lived projects
+
+---
+
+### ADR-008 — Shared Database Multi-Tenancy (Organization-Key Isolation)
+
+**Status**: Accepted
+
+**Context**  
+Multiple political organizations use the same system instance. Their data must be strictly isolated — a manager from Party A must never see Party B's data.
+
+**Decision**  
+Use a single shared database with an `OrganizationId` foreign key on every tenant-scoped table, enforced at the application layer via EF Core query filters.
+
+**Alternatives Considered**
+
+| Alternative                         | Reason Rejected                                                                   |
+| ----------------------------------- | --------------------------------------------------------------------------------- |
+| Separate database per organization  | Operational overhead too high; migrations must run N times; connection pool bloat |
+| Separate schema per organization    | SQL Server schema-per-tenant is complex to manage with EF Core                    |
+| Row-level security (SQL Server RLS) | Adds DB-layer complexity; application-layer filtering is more transparent         |
+
+**Rationale**
+
+- EF Core Global Query Filters automatically append `WHERE OrganizationId = @OrgId` to every query
+- Single migration applies to all tenants simultaneously
+- Simpler backup/restore — one database
+- Sufficient isolation for the system's compliance requirements
+
+**Trade-offs**
+
+- A missing `OrganizationId` filter in a raw SQL query would be a data leak — mitigated by code review and integration tests
+- Noisy-neighbor performance risk at scale (mitigated by indexes on `OrganizationId` columns)
+
+---
+
+### ADR-009 — Repository Pattern over Direct DbContext Usage
+
+**Status**: Accepted
+
+**Context**  
+Service classes need to access data without being tightly coupled to EF Core, enabling unit testing with mock repositories.
+
+**Decision**  
+Implement generic `IRepository<T>` and specific repository interfaces (e.g., `IEmployeeRepository`) wrapping EF Core `DbContext`.
+
+**Alternatives Considered**
+
+| Alternative                               | Reason Rejected                                                              |
+| ----------------------------------------- | ---------------------------------------------------------------------------- |
+| Inject `DbContext` directly into services | Harder to unit test services (requires in-memory DB or mocking EF internals) |
+| CQRS with MediatR                         | Adds significant structural complexity for this project's scope              |
+
+**Rationale**
+
+- Repository interfaces are easily mocked in unit tests with Moq
+- Services depend on abstractions, not EF Core concretions (Dependency Inversion Principle)
+- Centralizes query logic — complex queries live in repositories, not scattered across services
+
+**Trade-offs**
+
+- EF Core's `DbContext` is already a Unit of Work + Repository — this adds a layer on top
+- Risk of the repository becoming a thin wrapper that adds no real value (mitigated by putting real query logic inside it)
+
+---
+
 ## Next Steps (Phase 3)
 
 1. **API Endpoint Implementation** - Implement all endpoints listed above
@@ -1405,5 +1698,5 @@ GROUP BY PollingStationId;
 ---
 
 **Document Status**: ✅ Complete  
-**Last Updated**: April 2, 2026  
-**Version**: 1.0
+**Last Updated**: April 7, 2026  
+**Version**: 1.1
