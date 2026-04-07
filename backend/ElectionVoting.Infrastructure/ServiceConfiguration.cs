@@ -26,6 +26,7 @@ public static class ServiceConfiguration
         services.AddScoped<IVoteCountRepository, VoteCountRepository>();
         services.AddScoped<IPollingStationRepository, PollingStationRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
         // Application Services
         services.AddScoped<IAuthService, AuthService>();

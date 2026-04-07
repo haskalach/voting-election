@@ -28,4 +28,11 @@ public class VoteCountRepository : Repository<VoteCount>, IVoteCountRepository
             .Where(vc => vc.PollingStationId == pollingStationId)
             .Include(vc => vc.Employee)
             .ToListAsync();
+
+    public async Task<bool> ExistsForCandidateOnDateAsync(int employeeId, int pollingStationId, string candidateName, DateTime date) =>
+        await _context.VoteCounts.AnyAsync(vc =>
+            vc.EmployeeId == employeeId &&
+            vc.PollingStationId == pollingStationId &&
+            vc.CandidateName.ToLower() == candidateName.ToLower() &&
+            vc.RecordedAt.Date == date.Date);
 }

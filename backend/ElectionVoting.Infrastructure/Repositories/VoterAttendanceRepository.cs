@@ -28,4 +28,10 @@ public class VoterAttendanceRepository : Repository<VoterAttendance>, IVoterAtte
             .Where(va => va.PollingStationId == pollingStationId)
             .Include(va => va.Employee)
             .ToListAsync();
+
+    public async Task<bool> ExistsForEmployeeOnDateAsync(int employeeId, int pollingStationId, DateTime date) =>
+        await _context.VoterAttendances.AnyAsync(va =>
+            va.EmployeeId == employeeId &&
+            va.PollingStationId == pollingStationId &&
+            va.RecordedAt.Date == date.Date);
 }

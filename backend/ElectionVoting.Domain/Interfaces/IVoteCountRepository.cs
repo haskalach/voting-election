@@ -7,4 +7,5 @@ public interface IVoteCountRepository : IRepository<VoteCount>
     Task<IEnumerable<VoteCount>> GetByEmployeeAsync(int employeeId);
     Task<IEnumerable<VoteCount>> GetByOrganizationAsync(int organizationId);
     Task<IEnumerable<VoteCount>> GetByStationAsync(int pollingStationId);
+    Task<bool> ExistsForCandidateOnDateAsync(int employeeId, int pollingStationId, string candidateName, DateTime date);
 }

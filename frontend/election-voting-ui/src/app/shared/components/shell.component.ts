@@ -17,8 +17,8 @@ import { AuthService } from '../../core/services/auth.service';
             >Organizations</a
           >
         }
-        @if (auth.isSystemOwner() || auth.isManager()) {
-          <a routerLink="/employees" routerLinkActive="active">Employees</a>
+        @if (auth.isEmployee()) {
+          <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
         }
         @if (auth.isEmployee()) {
           <a routerLink="/data/attendance" routerLinkActive="active"

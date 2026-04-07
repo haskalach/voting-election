@@ -26,6 +26,9 @@ public class DataService : IDataService
 
     public async Task<VoterAttendanceDto> LogAttendanceAsync(int employeeId, LogVoterAttendanceDto dto)
     {
+        if (dto.VoterCount < 0)
+            throw new InvalidOperationException("Voter count cannot be negative.");
+
         var employee = await _employeeRepo.GetWithOrganizationAsync(employeeId)
             ?? throw new KeyNotFoundException("Employee not found.");
 
@@ -37,6 +40,11 @@ public class DataService : IDataService
 
         if (station.OrganizationId != employee.OrganizationId)
             throw new UnauthorizedAccessException("Station does not belong to employee's organization.");
+
+        var today = DateTime.UtcNow;
+        var alreadyLogged = await _attendanceRepo.ExistsForEmployeeOnDateAsync(employeeId, dto.PollingStationId, today);
+        if (alreadyLogged)
+            throw new InvalidOperationException("You have already logged attendance for this station today.");
 
         var record = new VoterAttendance
         {
@@ -97,6 +105,12 @@ public class DataService : IDataService
 
     public async Task<VoteCountDto> LogVoteCountAsync(int employeeId, LogVoteCountDto dto)
     {
+        if (dto.Votes < 0)
+            throw new InvalidOperationException("Vote count cannot be negative.");
+
+        if (string.IsNullOrWhiteSpace(dto.CandidateName))
+            throw new InvalidOperationException("Candidate name is required.");
+
         var employee = await _employeeRepo.GetWithOrganizationAsync(employeeId)
             ?? throw new KeyNotFoundException("Employee not found.");
 
@@ -109,11 +123,17 @@ public class DataService : IDataService
         if (station.OrganizationId != employee.OrganizationId)
             throw new UnauthorizedAccessException("Station does not belong to employee's organization.");
 
+        var today = DateTime.UtcNow;
+        var candidateNameNormalized = dto.CandidateName.Trim();
+        var alreadyLogged = await _voteCountRepo.ExistsForCandidateOnDateAsync(employeeId, dto.PollingStationId, candidateNameNormalized, today);
+        if (alreadyLogged)
+            throw new InvalidOperationException($"You have already logged votes for '{candidateNameNormalized}' at this station today.");
+
         var record = new VoteCount
         {
             EmployeeId = employeeId,
             PollingStationId = dto.PollingStationId,
-            CandidateName = dto.CandidateName,
+            CandidateName = candidateNameNormalized,
             Votes = dto.Votes,
             RecordedAt = DateTime.UtcNow
         };

@@ -7,4 +7,5 @@ public interface IVoterAttendanceRepository : IRepository<VoterAttendance>
     Task<IEnumerable<VoterAttendance>> GetByEmployeeAsync(int employeeId);
     Task<IEnumerable<VoterAttendance>> GetByOrganizationAsync(int organizationId);
     Task<IEnumerable<VoterAttendance>> GetByStationAsync(int pollingStationId);
+    Task<bool> ExistsForEmployeeOnDateAsync(int employeeId, int pollingStationId, DateTime date);
 }
