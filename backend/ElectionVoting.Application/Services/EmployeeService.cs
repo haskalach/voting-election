@@ -75,6 +75,14 @@ public class EmployeeService : IEmployeeService
         await _employeeRepository.SaveChangesAsync();
     }
 
+    public async Task DeleteAsync(int employeeId)
+    {
+        var emp = await _employeeRepository.GetByIdAsync(employeeId)
+            ?? throw new KeyNotFoundException($"Employee {employeeId} not found.");
+        await _employeeRepository.DeleteAsync(emp);
+        await _employeeRepository.SaveChangesAsync();
+    }
+
     private static EmployeeDto MapToDto(Employee e) => new(
         e.EmployeeId,
         e.OrganizationId,

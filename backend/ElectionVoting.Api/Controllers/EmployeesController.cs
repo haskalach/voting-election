@@ -63,11 +63,11 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpDelete("{empId}")]
-    public async Task<IActionResult> Deactivate(int orgId, int empId)
+    public async Task<IActionResult> Delete(int orgId, int empId)
     {
         try
         {
-            await _empService.DeactivateAsync(empId);
+            await _empService.DeleteAsync(empId);
             return NoContent();
         }
         catch (KeyNotFoundException)

@@ -116,10 +116,17 @@ public class OrganizationService : IOrganizationService
 
     public async Task DeleteAsync(int id)
     {
-        var org = await _orgRepository.GetByIdAsync(id)
+        var org = await _orgRepository.GetWithEmployeesAsync(id)
             ?? throw new KeyNotFoundException($"Organization {id} not found.");
-        org.IsActive = false;
-        await _orgRepository.UpdateAsync(org);
+        
+        // Delete all employees in the organization (cascade delete handled by EF)
+        foreach (var employee in org.Employees.ToList())
+        {
+            await _employeeRepository.DeleteAsync(employee);
+        }
+        
+        // Delete the organization
+        await _orgRepository.DeleteAsync(org);
         await _orgRepository.SaveChangesAsync();
     }
 

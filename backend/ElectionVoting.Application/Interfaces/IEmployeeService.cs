@@ -9,4 +9,5 @@ public interface IEmployeeService
     Task<EmployeeDto> CreateAsync(int organizationId, CreateEmployeeDto dto, int supervisedByUserId);
     Task<EmployeeDto> UpdateAsync(int employeeId, UpdateEmployeeDto dto);
     Task DeactivateAsync(int employeeId);
+    Task DeleteAsync(int employeeId);
 }
