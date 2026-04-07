@@ -1,0 +1,40 @@
+graph TD
+    Request["🔒 API Request Received<br/>Extract: UserId, RoleId, OrganizationId"]
+    
+    Request -->|Check User Role| RoleCheck{User Role?}
+    
+    RoleCheck -->|System Owner<br/>RoleId=1| SysOwner["System Owner<br/>Access Level: GLOBAL"]
+    RoleCheck -->|Manager<br/>RoleId=2| Manager["Organization Manager<br/>Access Level: ORGANIZATION"]
+    RoleCheck -->|Employee<br/>RoleId=3| Employee["On-Ground Supervisor<br/>Access Level: PERSONAL"]
+    
+    SysOwner --> SO_Perms["✓ Create Organizations<br/>✓ View All Analytics<br/>✓ Manage All Settings<br/>✓ View All Users<br/>✓ Manage Roles<br/>✓ Access System Admin Panel"]
+    
+    Manager --> ManagerRes{Requested<br/>Resource?}
+    ManagerRes -->|Own Organization Data| MgrAllow["✓ Manage Organization<br/>✓ View Org Analytics<br/>✓ Manage Employees<br/>✓ View Submissions"]
+    ManagerRes -->|Other Organization| MgrDeny["❌ 403 Forbidden<br/>Org ID Mismatch"]
+    
+    Employee --> EmpRes{Requested<br/>Resource?}
+    EmpRes -->|Own Submissions| EmpAllow["✓ Log Voter Attendance<br/>✓ Log Vote Counts<br/>✓ View Own Submissions<br/>✓ View Dashboard"]
+    EmpRes -->|Other Employee Data| EmpDeny["❌ 403 Forbidden<br/>Employee ID Mismatch"]
+    
+    SO_Perms --> Result1["✓ 200 Resource Granted"]
+    MgrAllow --> Result2["✓ 200 Resource Granted"]
+    EmpAllow --> Result3["✓ 200 Resource Granted"]
+    
+    MgrDeny --> Result4["❌ 403 Forbidden Response"]
+    EmpDeny --> Result5["❌ 403 Forbidden Response"]
+    
+    Result1 --> Return["Return Filtered Data<br/>Based on Role"]
+    Result2 --> Return
+    Result3 --> Return
+    Result4 --> Return
+    Result5 --> Return
+    
+    style SysOwner fill:#ff6b6b
+    style Manager fill:#ffd93d
+    style Employee fill:#6bcf7f
+    style SO_Perms fill:#ff6b6b
+    style MgrAllow fill:#ffd93d
+    style EmpAllow fill:#6bcf7f
+    style MgrDeny fill:#e74c3c
+    style EmpDeny fill:#e74c3c

@@ -1,0 +1,76 @@
+graph TB
+    subgraph Client["Client Tier - Angular Frontend"]
+        Browser["Web Browser"]
+        Auth["Auth Module<br/>JWT Storage"]
+        UI["UI Components<br/>Organization/Employee/Data Logging"]
+        Dashboard["Real-time Dashboard<br/>WebSocket"]
+    end
+
+    subgraph API["API Tier - ASP.NET Core"]
+        AuthCtrl["AuthController<br/>Login/Register"]
+        OrgCtrl["OrganizationController<br/>CRUD Operations"]
+        EmpCtrl["EmployeeController<br/>Management"]
+        DataCtrl["DataController<br/>Voter Attendance & Votes"]
+        DashCtrl["DashboardController<br/>Analytics & Export"]
+        AuthFilter["Auth Filter<br/>JWT Validation & RBAC"]
+    end
+
+    subgraph Business["Business Logic - Application Layer"]
+        AuthSvc["AuthenticationService<br/>JWT Generation & Validation"]
+        OrgSvc["OrganizationService<br/>Business Rules"]
+        EmpSvc["EmployeeService<br/>Hierarchy & Access"]
+        DataSvc["DataService<br/>Validation & Aggregation"]
+        ExportSvc["ExportService<br/>CSV/PDF Generation"]
+    end
+
+    subgraph Data["Data Access - Infrastructure Layer"]
+        EF["Entity Framework Core<br/>ORM"]
+        Repository["Repository Pattern<br/>Data Abstraction"]
+        AuditLog["Audit Logger<br/>Change Tracking"]
+    end
+
+    subgraph Database["Data Tier - SQL Server"]
+        UserDB["Users Table<br/>Auth Credentials"]
+        OrgDB["Organizations Table<br/>Party Info"]
+        EmpDB["Employees Table<br/>Hierarchy"]
+        VoterDB["Voter Attendance Table<br/>Activity Log"]
+        VoteDB["Vote Counts Table<br/>Results"]
+        AuditDB["Audit Log Table<br/>Changes"]
+    end
+
+    Browser -->|HTTP/HTTPS| AuthCtrl
+    Browser -->|WebSocket| Dashboard
+    Auth -->|Token| AuthFilter
+    UI -->|API Requests| OrgCtrl
+    UI -->|API Requests| EmpCtrl
+    UI -->|API Requests| DataCtrl
+    Dashboard -->|Real-time Data| DashCtrl
+
+    AuthCtrl -->|Validate| AuthSvc
+    OrgCtrl -->|Business Logic| OrgSvc
+    EmpCtrl -->|Business Logic| EmpSvc
+    DataCtrl -->|Business Logic| DataSvc
+    DashCtrl -->|Business Logic| ExportSvc
+    AuthFilter -->|Check RBAC| AuthSvc
+
+    AuthSvc -->|Query/Update| Repository
+    OrgSvc -->|Query/Update| Repository
+    EmpSvc -->|Query/Update| Repository
+    DataSvc -->|Query/Update| Repository
+    ExportSvc -->|Query/Update| Repository
+
+    Repository -->|Map Models| EF
+    AuditLog -->|Track Changes| Repository
+
+    EF -->|SQL Queries| UserDB
+    EF -->|SQL Queries| OrgDB
+    EF -->|SQL Queries| EmpDB
+    EF -->|SQL Queries| VoterDB
+    EF -->|SQL Queries| VoteDB
+    AuditLog -->|Log Changes| AuditDB
+
+    style Client fill:#e1f5ff
+    style API fill:#fff3e0
+    style Business fill:#f3e5f5
+    style Data fill:#e8f5e9
+    style Database fill:#fce4ec

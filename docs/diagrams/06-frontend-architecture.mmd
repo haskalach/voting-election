@@ -1,0 +1,124 @@
+graph TB
+    subgraph Root["🅰️ Angular App Module"]
+        AppRoot["AppComponent<br/>Root Container"]
+    end
+
+    subgraph Core["Core Module<br/>Singleton Services"]
+        AuthService["AuthService<br/>JWT & User Management"]
+        HTTPInterceptor["HTTP Interceptor<br/>Auto Token Injection"]
+        Logger["Logger Service"]
+        ErrorHandler["Error Handler"]
+    end
+
+    subgraph Shared["Shared Module<br/>Reusable Components"]
+        Header["Header Component"]
+        Navigation["Navigation Component"]
+        Modal["Modal Dialog"]
+        DataTable["Data Table"]
+        Form["Reactive Form Controls"]
+        Pipes["Custom Pipes<br/>DateFormat, Currency"]
+        Directives["Custom Directives<br/>HighlightError, Loading"]
+    end
+
+    subgraph Auth["Auth Module<br/>Authentication"]
+        LoginComp["LoginComponent"]
+        RegisterComp["RegisterComponent"]
+        AuthService2["AuthService"]
+        Guards["Route Guards<br/>AuthGuard, RoleGuard"]
+    end
+
+    subgraph OrgModule["Organization Module"]
+        OrgList["OrganizationListComponent"]
+        OrgDetail["OrganizationDetailComponent"]
+        OrgForm["OrganizationFormComponent"]
+        OrgService["OrganizationService"]
+        OrgStateFac["Org State Facade"]
+    end
+
+    subgraph EmpModule["Employee Module"]
+        EmpList["EmployeeListComponent"]
+        EmpDetail["EmployeeDetailComponent"]
+        EmpForm["EmployeeFormComponent"]
+        EmpService["EmployeeService"]
+        EmpStateFac["Emp State Facade"]
+    end
+
+    subgraph DataModule["Data Logging Module"]
+        AttendanceComp["Voter AttendanceComponent"]
+        VoteCountComp["Vote CountComponent"]
+        DataService["DataService"]
+        FormValidator["Custom Validators"]
+        DataStateFac["Data State Facade"]
+    end
+
+    subgraph Dashboard["Dashboard Module"]
+        DashMain["DashboardComponent"]
+        Charts["Chart Components<br/>Line, Bar, Pie"]
+        Stats["Statistics Widget"]
+        DashService["DashboardService"]
+    end
+
+    subgraph Admin["Admin Module<br/>System Owner Only"]
+        SystemConfig["System ConfigComponent"]
+        UserMgmt["User ManagementComponent"]
+        Reports["Reports GeneratorComponent"]
+        AdminService["AdminService"]
+    end
+
+    subgraph HttpLayer["HTTP Communication Layer"]
+        HttpClient["Interceptor + HttpClient"]
+        ApiUrls["API Constants<br/>Endpoint URLs"]
+    end
+
+    Root --> Core
+    Root --> Shared
+    Root --> Auth
+    AppRoot -->|Routes| OrgModule
+    AppRoot -->|Routes| EmpModule
+    AppRoot -->|Routes| DataModule
+    AppRoot -->|Routes| Dashboard
+    AppRoot -->|Routes| Admin
+
+    Auth -->|Uses| Core
+    Auth -->|Uses| Shared
+
+    OrgModule -->|Uses| Shared
+    OrgModule -->|Uses| Core
+    OrgService -->|HTTP| HttpLayer
+    OrgForm -->|Uses| FormValidator
+
+    EmpModule -->|Uses| Shared
+    EmpModule -->|Uses| Core
+    EmpService -->|HTTP| HttpLayer
+    EmpForm -->|Uses| FormValidator
+
+    DataModule -->|Uses| Shared
+    DataModule -->|Uses| Core
+    DataService -->|HTTP| HttpLayer
+    AttendanceComp -->|Uses| FormValidator
+    VoteCountComp -->|Uses| FormValidator
+
+    Dashboard -->|Uses| Shared
+    Dashboard -->|Uses| Core
+    DashService -->|HTTP| HttpLayer
+
+    Admin -->|Uses| Shared
+    Admin -->|Uses| Core
+    AdminService -->|HTTP| HttpLayer
+
+    HTTPInterceptor -->|Injects Token| HttpLayer
+    AuthService -->|Validates| Guards
+    Guards -->|Protects Routes| Root
+
+    HttpLayer -->|API Calls| ASPNetCore["ASP.NET Core Backend<br/>REST API"]
+
+    style Root fill:#1976d2
+    style Core fill:#d32f2f
+    style Shared fill:#f57c00
+    style Auth fill:#7b1fa2
+    style OrgModule fill:#0097a7
+    style EmpModule fill:#00796b
+    style DataModule fill:#5e35b1
+    style Dashboard fill:#c2185b
+    style Admin fill:#e64a19
+    style HttpLayer fill:#ffb300

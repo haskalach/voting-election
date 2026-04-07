@@ -1,0 +1,11 @@
+{
+  "name": "diagram-generator",
+  "version": "1.0.0",
+  "description": "Generate PNG diagrams from Mermaid source files",
+  "scripts": {
+    "generate-diagrams": "node generate-diagrams.js"
+  },
+  "dependencies": {
+    "@mermaid-js/mermaid-cli": "^10.6.1"
+  }
+}

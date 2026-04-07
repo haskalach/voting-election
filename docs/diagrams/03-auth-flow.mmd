@@ -1,0 +1,45 @@
+sequenceDiagram
+    participant User as User
+    participant Client as Angular Client
+    participant Auth as Auth Service
+    participant Backend as ASP.NET Core API
+    participant DB as SQL Server
+
+    User->>Client: Enter Email & Password
+    Client->>Backend: POST /api/auth/login
+    Backend->>DB: Query User by Email
+    DB-->>Backend: User Record + Password Hash
+    Backend->>Auth: Validate Credentials
+    Auth-->>Backend: ✓ Valid
+    Backend->>Auth: Generate JWT Token<br/>(UserId, RoleId, OrgId)
+    Auth-->>Backend: JWT Token
+    Backend-->>Client: Token + Refresh Token
+    Client->>Client: Store Token in LocalStorage
+    Client->>Client: Decode & Extract Permissions
+
+    Note over Client: Subsequent Requests
+
+    User->>Client: Request Resource
+    Client->>Client: Get Token from Storage
+    Client->>Backend: GET /api/resource<br/>Authorization: Bearer {JWT}
+    Backend->>Backend: AuthFilter - Validate JWT Signature
+    Backend->>Backend: Verify Token Expiration
+    Backend->>Backend: Extract UserId, RoleId, OrgId
+    Backend->>DB: Verify User Still Active
+    DB-->>Backend: ✓ Active
+    Backend->>Backend: Apply RBAC Rules<br/>Check Resource Authorization
+    Backend-->>Client: ✓ Return Resource
+    Client->>User: Display Data
+
+    Note over User,DB: Token Expiration Flow
+
+    Client->>Backend: Request with Expired Token
+    Backend-->>Client: 401 Unauthorized
+    Client->>Backend: POST /api/auth/refresh<br/>with Refresh Token
+    Backend->>Auth: Validate Refresh Token
+    Auth-->>Backend: ✓ Valid
+    Backend->>Auth: Generate New JWT
+    Auth-->>Backend: New JWT Token
+    Backend-->>Client: New JWT
+    Client->>Client: Update Token in Storage
+    Client->>Backend: Retry Original Request

@@ -1,0 +1,95 @@
+erDiagram
+    USERS ||--o{ ORGANIZATIONS : manages
+    ORGANIZATIONS ||--o{ EMPLOYEES : contains
+    EMPLOYEES ||--o{ VOTER_ATTENDANCE : logs
+    EMPLOYEES ||--o{ VOTE_COUNTS : records
+    USERS ||--o{ AUDIT_LOG : creates
+    ORGANIZATIONS ||--o{ AUDIT_LOG : affects
+
+    USERS {
+        int UserId PK
+        string Email UK
+        string PasswordHash
+        string FirstName
+        string LastName
+        int RoleId FK
+        datetime CreatedAt
+        datetime LastLoginAt
+        bool IsActive
+    }
+
+    ROLES {
+        int RoleId PK
+        string RoleName UK
+        string Description
+    }
+
+    ORGANIZATIONS {
+        int OrganizationId PK
+        string OrganizationName UK
+        string PartyName
+        int CreatedByUserId FK
+        datetime CreatedAt
+        string ContactEmail
+        string Address
+        bool IsActive
+        int TotalEmployees
+    }
+
+    EMPLOYEES {
+        int EmployeeId PK
+        int OrganizationId FK
+        int SupervisedByUserId FK
+        string FirstName
+        string LastName
+        string Email UK
+        string PhoneNumber
+        datetime DateOfBirth
+        datetime CreatedAt
+        bool IsActive
+        datetime LastActivityAt
+    }
+
+    VOTER_ATTENDANCE {
+        int AttendanceId PK
+        int EmployeeId FK
+        int PollingStationId FK
+        int VoterCount
+        datetime RecordedAt
+        string Notes
+        bool IsVerified
+        datetime CreatedAt
+    }
+
+    VOTE_COUNTS {
+        int VoteCountId PK
+        int EmployeeId FK
+        int PollingStationId FK
+        string CandidateName
+        int VoteCount
+        datetime RecordedAt
+        bool IsVerified
+        datetime CreatedAt
+    }
+
+    POLLING_STATIONS {
+        int PollingStationId PK
+        int OrganizationId FK
+        string StationName
+        string Location
+        string Address
+        int Capacity
+        datetime CreatedAt
+    }
+
+    AUDIT_LOG {
+        int AuditId PK
+        int UserId FK
+        int OrganizationId FK
+        string EntityType
+        int EntityId
+        string Action
+        string OldValues
+        string NewValues
+        datetime Timestamp
+    }

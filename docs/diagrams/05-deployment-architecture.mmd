@@ -1,0 +1,100 @@
+graph TB
+    subgraph Clients["🖥️ Client Tier"]
+        Desktop["Desktop Browser<br/>Chrome/Edge/Firefox"]
+        Tablet["Tablet Browser<br/>iPad/Android"]
+        Mobile["Mobile Browser<br/>iPhone/Android"]
+    end
+
+    subgraph CDN["CDN & Static Assets"]
+        Static["Static Files<br/>HTML, CSS, JS, Images"]
+    end
+
+    subgraph LoadBalancer["⚖️ Load Balancer"]
+        LB["NGINX / Azure LB<br/>Port 443 HTTPS"]
+    end
+
+    subgraph WebServers["🌐 Web Tier - ASP.NET Core"]
+        Server1["API Server 1<br/>Port 5001"]
+        Server2["API Server 2<br/>Port 5002"]
+        Server3["API Server 3<br/>Port 5003"]
+    end
+
+    subgraph Cache["💾 Cache Layer"]
+        Redis["Redis Cache<br/>Session & Token Cache<br/>Dashboard Data"]
+    end
+
+    subgraph AppServices["📦 Application Services"]
+        AuthService["Authentication Service"]
+        OrgService["Organization Service"]
+        DataService["Data Service"]
+        ExportService["Export Service"]
+        NotificationService["Notification Service"]
+    end
+
+    subgraph Jobs["⚙️ Background Jobs"]
+        Queue["Task Queue<br/>Hangfire/RabbitMQ"]
+        ExportJob["Export Job Worker"]
+        AuditJob["Audit Log Worker"]
+    end
+
+    subgraph Database["🗄️ Database Tier"]
+        Primary["SQL Server Primary<br/>Read/Write"]
+        Replica["SQL Server Replica<br/>Read-Only"]
+        Backup["Automated Backup<br/>Daily @ 2 AM"]
+    end
+
+    subgraph Logging["📊 Monitoring & Logging"]
+        Logs["Application Logs<br/>Event Hub"]
+        Metrics["Metrics & APM<br/>Application Insights"]
+        Audit["Audit Trail<br/>Compliance"]
+    end
+
+    Clients -->|HTTPS| CDN
+    Clients -->|HTTP/REST| LB
+    CDN --> Static
+    LB -->|Traffic Distribution| Server1
+    LB -->|Traffic Distribution| Server2
+    LB -->|Traffic Distribution| Server3
+
+    Server1 -->|Read/Write Session| Redis
+    Server2 -->|Read/Write Session| Redis
+    Server3 -->|Read/Write Session| Redis
+
+    Server1 --> AuthService
+    Server2 --> OrgService
+    Server3 --> DataService
+    AuthService --> AppServices
+    OrgService --> AppServices
+    DataService --> AppServices
+    AppServices --> ExportService
+    ExportService --> Queue
+
+    Queue --> ExportJob
+    Queue --> AuditJob
+
+    AuthService -->|Query/Write| Primary
+    OrgService -->|Query/Write| Primary
+    DataService -->|Query/Write| Primary
+    ExportJob -->|Read| Replica
+    AuditJob -->|Read| Replica
+
+    Primary -->|Replication| Replica
+    Primary -->|Backup| Backup
+
+    Server1 -->|Logs/Metrics| Logs
+    Server2 -->|Logs/Metrics| Logs
+    Server3 -->|Logs/Metrics| Logs
+    Primary -->|Logs/Metrics| Metrics
+    Server1 -->|Audit Events| Audit
+    Server2 -->|Audit Events| Audit
+    Server3 -->|Audit Events| Audit
+
+    style Clients fill:#e3f2fd
+    style CDN fill:#fff9c4
+    style LoadBalancer fill:#ffe0b2
+    style WebServers fill:#f3e5f5
+    style Cache fill:#e8f5e9
+    style AppServices fill:#fce4ec
+    style Jobs fill:#f1f8e9
+    style Database fill:#ede7f6
+    style Logging fill:#e0f2f1
