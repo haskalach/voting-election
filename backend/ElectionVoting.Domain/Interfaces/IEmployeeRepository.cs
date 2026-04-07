@@ -6,5 +6,6 @@ public interface IEmployeeRepository : IRepository<Employee>
 {
     Task<IEnumerable<Employee>> GetByOrganizationAsync(int organizationId);
     Task<Employee?> GetWithOrganizationAsync(int employeeId);
+    Task<Employee?> GetByUserIdAsync(int userId);
     Task<bool> EmailExistsInOrgAsync(string email, int organizationId);
 }

@@ -19,6 +19,10 @@ public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
             .Include(e => e.Organization)
             .FirstOrDefaultAsync(e => e.EmployeeId == employeeId);
 
+    public async Task<Employee?> GetByUserIdAsync(int userId) =>
+        await _context.Employees
+            .FirstOrDefaultAsync(e => e.UserId == userId);
+
     public async Task<bool> EmailExistsInOrgAsync(string email, int organizationId) =>
         await _context.Employees
             .AnyAsync(e => e.Email == email.ToLowerInvariant() && e.OrganizationId == organizationId);

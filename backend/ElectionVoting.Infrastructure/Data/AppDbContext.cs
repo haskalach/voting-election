@@ -72,6 +72,7 @@ public class AppDbContext : DbContext
             e.Property(emp => emp.FirstName).HasMaxLength(100).IsRequired();
             e.Property(emp => emp.LastName).HasMaxLength(100).IsRequired();
             e.Property(emp => emp.PhoneNumber).HasMaxLength(20);
+            e.HasOne(emp => emp.User).WithMany().HasForeignKey(emp => emp.UserId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(emp => emp.Organization).WithMany(o => o.Employees).HasForeignKey(emp => emp.OrganizationId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(emp => emp.SupervisedByUser).WithMany().HasForeignKey(emp => emp.SupervisedByUserId).OnDelete(DeleteBehavior.Restrict);
         });

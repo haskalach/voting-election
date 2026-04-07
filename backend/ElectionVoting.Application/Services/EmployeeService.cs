@@ -65,6 +65,7 @@ public class EmployeeService : IEmployeeService
 
         var employee = new Employee
         {
+            UserId = user.UserId,
             OrganizationId = organizationId,
             SupervisedByUserId = supervisedByUserId,
             FirstName = dto.FirstName,

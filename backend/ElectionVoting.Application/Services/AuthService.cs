@@ -15,15 +15,18 @@ namespace ElectionVoting.Application.Services;
 public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
+    private readonly IEmployeeRepository _employeeRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IConfiguration _configuration;
 
     public AuthService(
         IUserRepository userRepository,
+        IEmployeeRepository employeeRepository,
         IRefreshTokenRepository refreshTokenRepository,
         IConfiguration configuration)
     {
         _userRepository = userRepository;
+        _employeeRepository = employeeRepository;
         _refreshTokenRepository = refreshTokenRepository;
         _configuration = configuration;
     }
@@ -43,7 +46,7 @@ public class AuthService : IAuthService
         await _userRepository.UpdateAsync(user);
         await _userRepository.SaveChangesAsync();
 
-        var accessToken = GenerateAccessToken(user);
+        var accessToken = await GenerateAccessTokenAsync(user);
         var refreshToken = await CreateRefreshTokenAsync(user.UserId);
         var expiresIn = int.Parse(_configuration["Jwt:ExpiresInMinutes"] ?? "60") * 60;
 
@@ -75,7 +78,7 @@ public class AuthService : IAuthService
         var newRefreshToken = await CreateRefreshTokenAsync(user.UserId);
         await _refreshTokenRepository.SaveChangesAsync();
 
-        return new RefreshTokenResponseDto(GenerateAccessToken(user));
+        return new RefreshTokenResponseDto(await GenerateAccessTokenAsync(user));
     }
 
     public async Task<UserDto> RegisterAsync(RegisterRequestDto request)
@@ -106,22 +109,45 @@ public class AuthService : IAuthService
         await _refreshTokenRepository.SaveChangesAsync();
     }
 
-    private string GenerateAccessToken(User user)
+    private async Task<string> GenerateAccessTokenAsync(User user)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
             _configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT secret not configured.")));
 
-        var claims = new[]
+        // Get organization ID based on role
+        string? organizationId = null;
+        string? employeeId = null;
+
+        if (user.Role.RoleName == Role.Names.Manager)
+        {
+            organizationId = user.Organizations.FirstOrDefault()?.OrganizationId.ToString();
+        }
+        else if (user.Role.RoleName == Role.Names.Employee)
+        {
+            var employee = await _employeeRepository.GetByUserIdAsync(user.UserId);
+            if (employee != null)
+            {
+                organizationId = employee.OrganizationId.ToString();
+                employeeId = employee.EmployeeId.ToString();
+            }
+        }
+
+        var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Role.RoleName),
             new Claim("userId", user.UserId.ToString()),
-            new Claim("organizationId", user.Organizations.FirstOrDefault()?.OrganizationId.ToString() ?? ""),
             new Claim(JwtRegisteredClaimNames.Iss, _configuration["Jwt:Issuer"] ?? "election-api"),
             new Claim(JwtRegisteredClaimNames.Aud, _configuration["Jwt:Audience"] ?? "election-client"),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        if (!string.IsNullOrEmpty(organizationId))
+            claims.Add(new Claim("organizationId", organizationId));
+
+        if (!string.IsNullOrEmpty(employeeId))
+            claims.Add(new Claim("employeeId", employeeId));
 
         var expiresMinutes = int.Parse(_configuration["Jwt:ExpiresInMinutes"] ?? "60");
         var token = new JwtSecurityToken(

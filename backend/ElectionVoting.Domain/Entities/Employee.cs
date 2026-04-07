@@ -3,6 +3,7 @@ namespace ElectionVoting.Domain.Entities;
 public class Employee
 {
     public int EmployeeId { get; set; }
+    public int UserId { get; set; }
     public int OrganizationId { get; set; }
     public int SupervisedByUserId { get; set; }
     public string FirstName { get; set; } = string.Empty;
@@ -14,6 +15,7 @@ public class Employee
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? LastActivityAt { get; set; }
 
+    public User User { get; set; } = null!;
     public Organization Organization { get; set; } = null!;
     public User SupervisedByUser { get; set; } = null!;
     public ICollection<VoterAttendance> VoterAttendances { get; set; } = new List<VoterAttendance>();
