@@ -10,15 +10,18 @@ public class OrganizationService : IOrganizationService
 {
     private readonly IOrganizationRepository _orgRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IEmployeeRepository _employeeRepository;
     private readonly IRoleRepository _roleRepository;
 
     public OrganizationService(
         IOrganizationRepository orgRepository,
         IUserRepository userRepository,
+        IEmployeeRepository employeeRepository,
         IRoleRepository roleRepository)
     {
         _orgRepository = orgRepository;
         _userRepository = userRepository;
+        _employeeRepository = employeeRepository;
         _roleRepository = roleRepository;
     }
 
@@ -78,6 +81,20 @@ public class OrganizationService : IOrganizationService
 
         await _orgRepository.AddAsync(org);
         await _orgRepository.SaveChangesAsync();
+
+        // Create Employee record for the admin
+        var adminEmployee = new Employee
+        {
+            OrganizationId = org.OrganizationId,
+            SupervisedByUserId = createdByUserId,
+            FirstName = adminUser.FirstName,
+            LastName = adminUser.LastName,
+            Email = adminUser.Email,
+            IsActive = true
+        };
+
+        await _employeeRepository.AddAsync(adminEmployee);
+        await _employeeRepository.SaveChangesAsync();
 
         return MapToDto(org);
     }
