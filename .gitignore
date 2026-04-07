@@ -1,9 +1,21 @@
-# Dependencies
-node_modules/
+# Backend (.NET)
+backend/bin/
+backend/obj/
+backend/.vs/
+backend/**/*.csproj.user
+backend/**/appsettings.Development.json
+backend/**/appsettings.*.local.json
+
+# Frontend (Angular/Node)
+frontend/node_modules/
+frontend/**/*.js.map
+frontend/**/*.ngfactory.js
 npm-debug.log
+yarn-error.log
 package-lock.json
 yarn.lock
-
+# Dependencies
+node_modules/
 # Build outputs
 dist/
 build/
@@ -17,11 +29,15 @@ build/
 *~
 .DS_Store
 *.code-workspace
+*.suo
+*.user
+*.userosscache
 
 # Environment files
 .env
 .env.local
 .env.*.local
+secrets/
 
 # OS files
 Thumbs.db
