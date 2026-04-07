@@ -1,0 +1,17 @@
+namespace ElectionVoting.Domain.Entities;
+
+public class AuditLog
+{
+    public int AuditId { get; set; }
+    public int UserId { get; set; }
+    public int? OrganizationId { get; set; }
+    public string EntityType { get; set; } = string.Empty;
+    public int EntityId { get; set; }
+    public string Action { get; set; } = string.Empty;
+    public string? OldValues { get; set; }
+    public string? NewValues { get; set; }
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+
+    public User User { get; set; } = null!;
+    public Organization? Organization { get; set; }
+}

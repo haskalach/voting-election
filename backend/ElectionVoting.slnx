@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="ElectionVoting.Api/ElectionVoting.Api.csproj" />
+  <Project Path="ElectionVoting.Application/ElectionVoting.Application.csproj" />
+  <Project Path="ElectionVoting.Domain/ElectionVoting.Domain.csproj" />
+  <Project Path="ElectionVoting.Infrastructure/ElectionVoting.Infrastructure.csproj" />
+</Solution>

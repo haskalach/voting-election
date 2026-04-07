@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "ElectionVoting.Domain/1.0.0": {
+        "runtime": {
+          "ElectionVoting.Domain.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "ElectionVoting.Domain/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
