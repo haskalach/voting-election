@@ -276,9 +276,18 @@ import { AuthService } from '../../core/services/auth.service';
     `,
   ],
 })
+/**
+ * OrgDetailComponent - Displays detailed information about a specific organization
+ * Shows organization details and a list of employees belonging to the organization
+ * SystemOwner can edit and delete the organization and its employees
+ * Features: View org details, manage employees (edit/delete), delete org with cascade
+ */
 export class OrgDetailComponent implements OnInit {
+  /** Signal storing the current organization details */
   org = signal<Organization | null>(null);
+  /** Signal storing the list of employees in the organization */
   employees = signal<EmployeeSummary[]>([]);
+  /** Signal tracking loading state during delete operations */
   loading = signal(false);
 
   constructor(
@@ -289,16 +298,27 @@ export class OrgDetailComponent implements OnInit {
     public auth: AuthService,
   ) {}
 
+  /**
+   * Angular lifecycle hook - called when component initializes
+   * Extracts organization ID from route params and loads org details and employees
+   */
   ngOnInit(): void {
+    // Extract organization ID from route URL parameter
     const id = +this.route.snapshot.paramMap.get('id')!;
+    // Fetch organization details from API
     this.orgService.getById(id).subscribe((org) => {
       this.org.set(org);
+      // Fetch employees for this organization
       this.empService
         .getByOrganization(id)
         .subscribe((emps) => this.employees.set(emps));
     });
   }
 
+  /**
+   * Refreshes the employees list for the current organization
+   * Used after employee deletion or form submission
+   */
   load(): void {
     const id = this.org()!.organizationId;
     this.empService.getByOrganization(id).subscribe((emps) => {
@@ -306,15 +326,23 @@ export class OrgDetailComponent implements OnInit {
     });
   }
 
+  /**
+   * Deletes the entire organization after user confirmation
+   * Cascades to delete all employees in the organization
+   * Redirects to organizations list on success
+   */
   deleteOrg(): void {
+    // Show confirmation dialog with cascade warning
     if (
       confirm(
         `Are you sure you want to delete "${this.org()!.organizationName}"? This will also delete all its employees.`,
       )
     ) {
       this.loading.set(true);
+      // Call delete API with organization ID
       this.orgService.delete(this.org()!.organizationId).subscribe({
         next: () => {
+          // Navigate back to organizations list on successful deletion
           this.router.navigate(['/organizations']);
         },
         error: () => {
@@ -325,10 +353,18 @@ export class OrgDetailComponent implements OnInit {
     }
   }
 
+  /**
+   * Deletes a single employee from the organization after user confirmation
+   * Refreshes employees list on success
+   * @param id - Employee ID to delete
+   * @param name - Employee name for confirmation dialog
+   */
   deleteEmployee(id: number, name: string): void {
+    // Show confirmation dialog
     if (confirm(`Are you sure you want to delete "${name}"?`)) {
+      // Call delete API with organization and employee IDs
       this.empService.delete(this.org()!.organizationId, id).subscribe({
-        next: () => this.load(),
+        next: () => this.load(), // Refresh employees list after successful deletion
         error: () => alert('Delete failed'),
       });
     }

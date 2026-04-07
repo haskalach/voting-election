@@ -65,6 +65,14 @@ import { AuthService } from '../../core/services/auth.service';
                       class="btn-link"
                       >Edit</a
                     >
+                    <button
+                      (click)="
+                        deleteOrg(org.organizationId, org.organizationName)
+                      "
+                      class="btn-delete-link"
+                    >
+                      Delete
+                    </button>
                   }
                 </td>
               </tr>
@@ -102,6 +110,20 @@ import { AuthService } from '../../core/services/auth.service';
         font-size: 0.9rem;
       }
       .btn-link:hover {
+        text-decoration: underline;
+      }
+      .btn-delete-link {
+        background: none;
+        border: none;
+        color: #d32f2f;
+        text-decoration: none;
+        margin-right: 0.75rem;
+        font-size: 0.9rem;
+        cursor: pointer;
+        padding: 0;
+        font: inherit;
+      }
+      .btn-delete-link:hover {
         text-decoration: underline;
       }
       .table-container {
@@ -161,8 +183,15 @@ import { AuthService } from '../../core/services/auth.service';
     `,
   ],
 })
+/**
+ * OrgListComponent - Displays a list of all organizations
+ * Only SystemOwner can create, edit, or delete organizations
+ * Features: View organizations, create new, edit, and delete with cascade to employees
+ */
 export class OrgListComponent implements OnInit {
+  /** Signal storing the list of organizations fetched from the API */
   orgs = signal<OrganizationSummary[]>([]);
+  /** Signal tracking loading state for the organizations list */
   loading = signal(true);
 
   constructor(
@@ -170,7 +199,19 @@ export class OrgListComponent implements OnInit {
     public auth: AuthService,
   ) {}
 
+  /**
+   * Angular lifecycle hook - called when component initializes
+   * Loads the organizations list on component load
+   */
   ngOnInit(): void {
+    this.load();
+  }
+
+  /**
+   * Fetches all organizations from the API and updates the orgs signal
+   * Sets loading state during the request and clears it on completion
+   */
+  load(): void {
     this.orgService.getAll().subscribe({
       next: (data) => {
         this.orgs.set(data);
@@ -178,5 +219,26 @@ export class OrgListComponent implements OnInit {
       },
       error: () => this.loading.set(false),
     });
+  }
+
+  /**
+   * Deletes an organization after user confirmation
+   * Cascades to delete all employees in that organization
+   * Refreshes the list on success
+   * @param id - Organization ID to delete
+   * @param name - Organization name for confirmation dialog
+   */
+  deleteOrg(id: number, name: string): void {
+    // Show confirmation dialog with cascade warning
+    if (
+      confirm(
+        `Are you sure you want to delete "${name}"? This will also delete all its employees.`,
+      )
+    ) {
+      this.orgService.delete(id).subscribe({
+        next: () => this.load(), // Refresh list after successful deletion
+        error: (err) => alert('Delete failed: ' + err.message),
+      });
+    }
   }
 }
