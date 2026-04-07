@@ -132,6 +132,99 @@ public class EmployeeServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_WithValidRoleSetup_CreatesEmployee()
+    {
+        // Arrange
+        int orgId = 1;
+        int supervisorId = 1;
+        var createRequest = new CreateEmployeeDto(
+            "Jane",
+            "Smith",
+            "jane.new@test.com",
+            "password456",
+            "555-1234",
+            null
+        );
+        var employeeRole = new Role { RoleId = 3, RoleName = Role.Names.Employee };
+        var createdEmployee = new Employee
+        {
+            EmployeeId = 1,
+            OrganizationId = orgId,
+            FirstName = "Jane",
+            LastName = "Smith",
+            Email = "jane.new@test.com",
+            IsActive = true
+        };
+
+        _mockEmployeeRepo.Setup(r => r.EmailExistsInOrgAsync(It.IsAny<string>(), It.IsAny<int>()))
+            .ReturnsAsync(false);
+        _mockUserRepo.Setup(r => r.GetByEmailAsync(It.IsAny<string>()))
+            .ReturnsAsync((User)null!);
+        _mockRoleRepo.Setup(r => r.GetByNameAsync(Role.Names.Employee))
+            .ReturnsAsync(employeeRole);
+        _mockUserRepo.Setup(r => r.AddAsync(It.IsAny<User>())).ReturnsAsync(new User());
+        _mockUserRepo.Setup(r => r.SaveChangesAsync()).ReturnsAsync(1);
+        _mockEmployeeRepo.Setup(r => r.AddAsync(It.IsAny<Employee>())).ReturnsAsync(new Employee());
+        _mockEmployeeRepo.Setup(r => r.SaveChangesAsync()).ReturnsAsync(1);
+        _mockEmployeeRepo.Setup(r => r.GetWithOrganizationAsync(It.IsAny<int>()))
+            .ReturnsAsync(createdEmployee);
+
+        // Act
+        var result = await _employeeService.CreateAsync(orgId, createRequest, supervisorId);
+
+        // Assert
+        Assert.NotNull(result);
+        _mockRoleRepo.Verify(r => r.GetByNameAsync(Role.Names.Employee), Times.Once);
+        _mockEmployeeRepo.Verify(r => r.AddAsync(It.IsAny<Employee>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithDuplicateEmailInOrg_ThrowsInvalidOperation()
+    {
+        // Arrange
+        _mockEmployeeRepo.Setup(r => r.EmailExistsInOrgAsync(It.IsAny<string>(), It.IsAny<int>()))
+            .ReturnsAsync(true);
+        var createRequest = new CreateEmployeeDto("A", "B", "dup@test.com", "password123", null, null);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _employeeService.CreateAsync(1, createRequest, 1));
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithShortPassword_ThrowsInvalidOperation()
+    {
+        // Arrange
+        _mockEmployeeRepo.Setup(r => r.EmailExistsInOrgAsync(It.IsAny<string>(), It.IsAny<int>()))
+            .ReturnsAsync(false);
+        _mockUserRepo.Setup(r => r.GetByEmailAsync(It.IsAny<string>())).ReturnsAsync((User)null!);
+        var createRequest = new CreateEmployeeDto("A", "B", "test@test.com", "short", null, null);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _employeeService.CreateAsync(1, createRequest, 1));
+    }
+
+    [Fact]
+    public async Task DeactivateAsync_WithValidId_SetsInactive()
+    {
+        // Arrange
+        int employeeId = 1;
+        var employee = new Employee { EmployeeId = employeeId, FirstName = "John", IsActive = true };
+
+        _mockEmployeeRepo.Setup(r => r.GetByIdAsync(employeeId)).ReturnsAsync(employee);
+        _mockEmployeeRepo.Setup(r => r.UpdateAsync(It.IsAny<Employee>())).Returns(Task.CompletedTask);
+        _mockEmployeeRepo.Setup(r => r.SaveChangesAsync()).ReturnsAsync(1);
+
+        // Act
+        await _employeeService.DeactivateAsync(employeeId);
+
+        // Assert
+        Assert.False(employee.IsActive);
+        _mockEmployeeRepo.Verify(r => r.UpdateAsync(It.IsAny<Employee>()), Times.Once);
+    }
+
+    [Fact]
     public async Task UpdateAsync_WithValidData_CallsRepository()
     {
         // Arrange
