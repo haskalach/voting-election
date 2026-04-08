@@ -6,6 +6,11 @@ using System.Security.Claims;
 
 namespace ElectionVoting.Api.Controllers;
 
+/// <summary>
+/// Manages employees within organizations with role-based access control.
+/// Managers can only access their own organization's employees.
+/// All endpoints require JWT authentication and organizational isolation checks.
+/// </summary>
 [ApiController]
 [Route("api/organizations/{orgId}/employees")]
 [Authorize(Roles = "SystemOwner,Manager")]
@@ -27,6 +32,12 @@ public class EmployeesController : ControllerBase
         return true;
     }
 
+    /// <summary>Retrieves all employees in an organization (requires org access)</summary>
+    /// <param name="orgId">The organization ID</param>
+    /// <returns>List of employees with summary information</returns>
+    /// <response code="200">Employees retrieved successfully</response>
+    /// <response code="401">User not authenticated</response>
+    /// <response code="403">User does not have access to this organization</response>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<EmployeeSummaryDto>>> GetByOrganization(int orgId)
     {
@@ -35,6 +46,14 @@ public class EmployeesController : ControllerBase
         return Ok(await _empService.GetByOrganizationAsync(orgId));
     }
 
+    /// <summary>Retrieves a specific employee by ID with full details</summary>
+    /// <param name="orgId">The organization ID</param>
+    /// <param name="empId">The employee ID</param>
+    /// <returns>Complete employee information</returns>
+    /// <response code="200">Employee found and returned</response>
+    /// <response code="401">User not authenticated</response>
+    /// <response code="403">User does not have access to this organization</response>
+    /// <response code="404">Employee not found</response>
     [HttpGet("{empId}")]
     public async Task<ActionResult<EmployeeDto>> GetById(int orgId, int empId)
     {
@@ -50,6 +69,14 @@ public class EmployeesController : ControllerBase
         }
     }
 
+    /// <summary>Creates a new employee in the organization</summary>
+    /// <param name="orgId">The organization ID</param>
+    /// <param name="dto">Employee data (name, email, role assignment)</param>
+    /// <returns>Newly created employee with assigned ID and user account</returns>
+    /// <response code="201">Employee created successfully</response>
+    /// <response code="400">Invalid employee data or duplicate email</response>
+    /// <response code="401">User not authenticated</response>
+    /// <response code="403">User does not have access to this organization</response>
     [HttpPost]
     public async Task<ActionResult<EmployeeDto>> Create(int orgId, [FromBody] CreateEmployeeDto dto)
     {
@@ -71,6 +98,16 @@ public class EmployeesController : ControllerBase
         }
     }
 
+    /// <summary>Updates employee information</summary>
+    /// <param name="orgId">The organization ID</param>
+    /// <param name="empId">The employee ID to update</param>
+    /// <param name="dto">Updated employee data</param>
+    /// <returns>Updated employee details</returns>
+    /// <response code="200">Employee updated successfully</response>
+    /// <response code="400">Invalid update data</response>
+    /// <response code="401">User not authenticated</response>
+    /// <response code="403">User does not have access to this organization</response>
+    /// <response code="404">Employee not found</response>
     [HttpPut("{empId}")]
     public async Task<ActionResult<EmployeeDto>> Update(int orgId, int empId, [FromBody] UpdateEmployeeDto dto)
     {
@@ -86,6 +123,13 @@ public class EmployeesController : ControllerBase
         }
     }
 
+    /// <summary>Deletes an employee and associated user account</summary>
+    /// <param name="orgId">The organization ID</param>
+    /// <param name="empId">The employee ID to delete</param>
+    /// <response code="204">Employee deleted successfully</response>
+    /// <response code="401">User not authenticated</response>
+    /// <response code="403">User does not have access to this organization</response>
+    /// <response code="404">Employee not found</response>
     [HttpDelete("{empId}")]
     public async Task<IActionResult> Delete(int orgId, int empId)
     {
