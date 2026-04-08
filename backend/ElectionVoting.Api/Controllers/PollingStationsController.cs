@@ -18,6 +18,8 @@ public class PollingStationsController : ControllerBase
 {
     private readonly IPollingStationService _stationService;
 
+    /// <summary>Initializes the polling stations controller with service dependency</summary>
+    /// <param name="stationService">Service managing polling station infrastructure</param>
     public PollingStationsController(IPollingStationService stationService) => _stationService = stationService;
 
     private bool IsOrgAccessAllowed(int orgId)

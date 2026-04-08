@@ -18,6 +18,8 @@ public class OrganizationsController : ControllerBase
 {
     private readonly IOrganizationService _orgService;
 
+    /// <summary>Initializes the organizations controller with service dependency</summary>
+    /// <param name="orgService">Service managing organization CRUD operations</param>
     public OrganizationsController(IOrganizationService orgService) => _orgService = orgService;
 
     /// <summary>Retrieves all organizations (visible to SystemOwner and Managers)</summary>

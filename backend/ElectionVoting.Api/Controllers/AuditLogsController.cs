@@ -17,6 +17,8 @@ public class AuditLogsController : ControllerBase
 {
     private readonly IAuditLogRepository _auditRepo;
 
+    /// <summary>Initializes the audit logs controller with repository dependency</summary>
+    /// <param name="auditRepo">Repository providing access to audit log entries</param>
     public AuditLogsController(IAuditLogRepository auditRepo) => _auditRepo = auditRepo;
 
     private static AuditLogDto ToDto(Domain.Entities.AuditLog a) => new(

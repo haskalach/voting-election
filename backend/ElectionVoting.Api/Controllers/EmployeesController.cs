@@ -18,6 +18,8 @@ public class EmployeesController : ControllerBase
 {
     private readonly IEmployeeService _empService;
 
+    /// <summary>Initializes the employees controller with service dependency</summary>
+    /// <param name="empService">Service managing employee operations and lifecycle</param>
     public EmployeesController(IEmployeeService empService) => _empService = empService;
 
     private bool IsOrgAccessAllowed(int orgId)
