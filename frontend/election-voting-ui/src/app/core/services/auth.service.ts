@@ -12,10 +12,12 @@ import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly TOKEN_KEY = 'access_token';
+  // Access token lives only in memory — never written to localStorage.
+  // This prevents XSS from reading it even if a script is injected.
   private readonly REFRESH_KEY = 'refresh_token';
   private readonly USER_KEY = 'user_info';
 
+  private _accessToken = signal<string | null>(null);
   private _user = signal<UserInfo | null>(this.loadUser());
 
   readonly user = this._user.asReadonly();
@@ -34,7 +36,7 @@ export class AuthService {
       .post<LoginResponse>(`${environment.apiUrl}/auth/login`, request)
       .pipe(
         tap((response) => {
-          localStorage.setItem(this.TOKEN_KEY, response.accessToken);
+          this._accessToken.set(response.accessToken);
           localStorage.setItem(this.REFRESH_KEY, response.refreshToken);
           localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
           this._user.set(response.user);
@@ -56,9 +58,7 @@ export class AuthService {
         refreshToken,
       })
       .pipe(
-        tap((response) =>
-          localStorage.setItem(this.TOKEN_KEY, response.accessToken),
-        ),
+        tap((response) => this._accessToken.set(response.accessToken)),
         catchError((err) => {
           this.clearSession();
           return throwError(() => err);
@@ -67,7 +67,7 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
+    return this._accessToken();
   }
 
   hasRole(...roles: string[]): boolean {
@@ -76,7 +76,7 @@ export class AuthService {
   }
 
   private clearSession(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
+    this._accessToken.set(null);
     localStorage.removeItem(this.REFRESH_KEY);
     localStorage.removeItem(this.USER_KEY);
     this._user.set(null);

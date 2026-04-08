@@ -1,9 +1,11 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace ElectionVoting.Application.DTOs;
 
 public record LogVoterAttendanceDto(
-    int PollingStationId,
-    int VoterCount,
-    string Notes);
+    [Range(1, int.MaxValue)] int PollingStationId,
+    [Range(0, int.MaxValue)] int VoterCount,
+    [MaxLength(500)] string? Notes);
 
 public record VoterAttendanceDto(
     int AttendanceId,
@@ -12,14 +14,14 @@ public record VoterAttendanceDto(
     int PollingStationId,
     string StationName,
     int VoterCount,
-    string Notes,
+    string? Notes,
     bool IsVerified,
     DateTime RecordedAt);
 
 public record LogVoteCountDto(
-    int PollingStationId,
-    string CandidateName,
-    int Votes);
+    [Range(1, int.MaxValue)] int PollingStationId,
+    [Required][MaxLength(200)] string CandidateName,
+    [Range(0, int.MaxValue)] int Votes);
 
 public record VoteCountDto(
     int VoteCountId,

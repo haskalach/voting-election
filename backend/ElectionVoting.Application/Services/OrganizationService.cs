@@ -60,8 +60,8 @@ public class OrganizationService : IOrganizationService
         {
             Email = dto.AdminEmail.ToLowerInvariant(),
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.AdminPassword),
-            FirstName = "Organization",
-            LastName = "Admin",
+            FirstName = dto.AdminFirstName,
+            LastName = dto.AdminLastName,
             RoleId = managerRole.RoleId,
             IsActive = true
         };
@@ -102,7 +102,7 @@ public class OrganizationService : IOrganizationService
 
     public async Task<OrganizationDto> UpdateAsync(int id, UpdateOrganizationDto dto)
     {
-        var org = await _orgRepository.GetByIdAsync(id)
+        var org = await _orgRepository.GetWithEmployeesAsync(id)
             ?? throw new KeyNotFoundException($"Organization {id} not found.");
 
         org.OrganizationName = dto.OrganizationName;
@@ -120,9 +120,12 @@ public class OrganizationService : IOrganizationService
         var org = await _orgRepository.GetWithEmployeesAsync(id)
             ?? throw new KeyNotFoundException($"Organization {id} not found.");
         
-        // Delete all employees in the organization (cascade delete handled by EF)
+        // Delete all employees and their associated User accounts
         foreach (var employee in org.Employees.ToList())
         {
+            var user = await _userRepository.GetByIdAsync(employee.UserId);
+            if (user != null)
+                await _userRepository.DeleteAsync(user);
             await _employeeRepository.DeleteAsync(employee);
         }
         

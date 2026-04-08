@@ -2,6 +2,7 @@ using ElectionVoting.Application.DTOs;
 using ElectionVoting.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ElectionVoting.Api.Controllers;
 
@@ -15,10 +16,12 @@ public class OrganizationsController : ControllerBase
     public OrganizationsController(IOrganizationService orgService) => _orgService = orgService;
 
     [HttpGet]
+    [Authorize(Roles = "SystemOwner,Manager")]
     public async Task<ActionResult<IEnumerable<OrganizationSummaryDto>>> GetAll() =>
         Ok(await _orgService.GetAllAsync());
 
     [HttpGet("{id}")]
+    [Authorize(Roles = "SystemOwner,Manager")]
     public async Task<ActionResult<OrganizationDto>> GetById(int id)
     {
         try
@@ -54,6 +57,14 @@ public class OrganizationsController : ControllerBase
     [Authorize(Roles = "SystemOwner,Manager")]
     public async Task<ActionResult<OrganizationDto>> Update(int id, [FromBody] UpdateOrganizationDto dto)
     {
+        // Managers can only update their own organization
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+        if (userRole == "Manager")
+        {
+            var orgIdClaim = User.FindFirst("organizationId")?.Value;
+            if (!int.TryParse(orgIdClaim, out var userOrgId) || userOrgId != id)
+                return Forbid();
+        }
         try
         {
             return Ok(await _orgService.UpdateAsync(id, dto));

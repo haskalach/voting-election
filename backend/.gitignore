@@ -38,9 +38,9 @@ _ReSharper*/
 *.sln.docstates
 
 # Local user-specific settings
-appsettings.*.json
 appsettings.Development.json
-!appsettings.json
+appsettings.Production.json
+appsettings.*.local.json
 
 # Database files
 *.mdf

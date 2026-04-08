@@ -1,6 +1,10 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace ElectionVoting.Application.DTOs;
 
-public record LoginRequestDto(string Email, string Password);
+public record LoginRequestDto(
+    [Required][EmailAddress] string Email,
+    [Required][MinLength(1)] string Password);
 
 public record LoginResponseDto(
     string AccessToken,
@@ -8,16 +12,17 @@ public record LoginResponseDto(
     int ExpiresIn,
     UserDto User);
 
-public record RefreshTokenRequestDto(string RefreshToken);
+public record RefreshTokenRequestDto(
+    [Required] string RefreshToken);
 
 public record RefreshTokenResponseDto(string AccessToken);
 
 public record RegisterRequestDto(
-    string Email,
-    string Password,
-    string FirstName,
-    string LastName,
-    int RoleId);
+    [Required][EmailAddress] string Email,
+    [Required][MinLength(8)] string Password,
+    [Required][MaxLength(100)] string FirstName,
+    [Required][MaxLength(100)] string LastName,
+    [Range(1, int.MaxValue)] int RoleId);
 
 public record UserDto(
     int UserId,

@@ -1,19 +1,21 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace ElectionVoting.Application.DTOs;
 
 public record CreateEmployeeDto(
-    string FirstName,
-    string LastName,
-    string Email,
-    string Password,
-    string PhoneNumber,
-    DateTime? DateOfBirth);
+    [Required][MaxLength(100)] string FirstName,
+    [Required][MaxLength(100)] string LastName,
+    [Required][EmailAddress][MaxLength(255)] string Email,
+    [Required][MinLength(8)] string Password,
+    [Required][Phone][MaxLength(20)] string PhoneNumber,
+    [DataType(DataType.Date)] DateTime? DateOfBirth);
 
 public record UpdateEmployeeDto(
-    string FirstName,
-    string LastName,
-    string Email,
-    string PhoneNumber,
-    DateTime? DateOfBirth,
+    [Required][MaxLength(100)] string FirstName,
+    [Required][MaxLength(100)] string LastName,
+    [Required][EmailAddress][MaxLength(255)] string Email,
+    [Required][Phone][MaxLength(20)] string PhoneNumber,
+    [DataType(DataType.Date)] DateTime? DateOfBirth,
     bool IsActive);
 
 public record EmployeeDto(
